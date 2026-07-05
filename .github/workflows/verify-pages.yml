@@ -1,0 +1,16 @@
+name: Verify legal pages are live
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Wait for GitHub Pages to rebuild
+        run: sleep 90
+      - name: Check every app has live privacy/support pages
+        run: bash scripts/check_pages.sh
