@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Refill — Never get caught without a refill again</title>
+<meta name="description" content="Refill is an honest pill-supply counter for iPhone. Check in each day, watch your blister pack empty, and get an adaptive refill-date estimate — not medical advice, just a smarter reminder.">
+<style>
+  :root {
+    --backdrop: #f6fafa;
+    --surface: #ffffff;
+    --surface-raised: #eef5f6;
+    --teal-deep: #145d6e;
+    --teal: #1e85a3;
+    --teal-bright: #3cadb4;
+    --blue: #348bab;
+    --ink: #161e21;
+    --ink-faded: rgba(22, 30, 33, 0.6);
+    --rule: rgba(20, 93, 110, 0.14);
+    --warn: #dd8429;
+    --capsule-empty: #e0e9ea;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    background: var(--backdrop);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--teal); }
+  .container { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+  /* header */
+  header.site {
+    position: sticky; top: 0; z-index: 20;
+    background: rgba(246, 250, 250, 0.86);
+    backdrop-filter: saturate(180%) blur(14px);
+    border-bottom: 1px solid var(--rule);
+  }
+  .site-inner {
+    max-width: 1080px; margin: 0 auto; padding: 16px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 17px; color: var(--ink); text-decoration: none; letter-spacing: -0.01em; }
+  .brand .dot { width: 10px; height: 15px; border-radius: 6px; background: var(--teal); display: inline-block; }
+  nav a { color: var(--teal-deep); text-decoration: none; font-size: 14px; margin-left: 22px; font-weight: 600; }
+  nav a:hover { text-decoration: underline; }
+
+  /* hero */
+  .hero {
+    padding: 76px 0 40px;
+    display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 48px; align-items: center;
+  }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 13px; font-weight: 700; letter-spacing: 0.02em;
+    color: var(--teal-deep); background: rgba(30,133,163,0.1);
+    padding: 6px 14px; border-radius: 999px; margin-bottom: 20px;
+  }
+  h1 {
+    font-size: clamp(34px, 5vw, 54px);
+    line-height: 1.06; letter-spacing: -0.03em; font-weight: 800;
+    margin: 0 0 20px; color: var(--ink);
+  }
+  h1 em { font-style: normal; color: var(--teal); }
+  .sub {
+    font-size: 19px; color: var(--ink-faded); max-width: 46ch; margin: 0 0 30px;
+  }
+  .cta-row { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 14px 26px; border-radius: 999px; font-weight: 700; font-size: 16px;
+    text-decoration: none; transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .btn-primary { background: var(--teal); color: #fff; box-shadow: 0 10px 24px -8px rgba(20,93,110,0.5); }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 28px -8px rgba(20,93,110,0.55); }
+  .btn-ghost { color: var(--teal-deep); border: 1.5px solid var(--rule); background: var(--surface); }
+  .btn-ghost:hover { border-color: var(--teal); }
+  .microcopy { margin-top: 14px; font-size: 13.5px; color: var(--ink-faded); }
+
+  /* animated blister pack hero visual */
+  .pack-stage {
+    display: flex; justify-content: center; align-items: center;
+    perspective: 1200px;
+  }
+  .phone-frame {
+    width: 300px; background: var(--surface);
+    border-radius: 40px; padding: 28px 22px 32px;
+    box-shadow: 0 30px 60px -20px rgba(20,93,110,0.35), 0 2px 8px rgba(20,93,110,0.12);
+    border: 1px solid rgba(20,93,110,0.08);
+  }
+  .phone-header { display:flex; justify-content:space-between; align-items:center; margin-bottom: 18px; }
+  .phone-header .title { font-weight: 800; font-size: 18px; letter-spacing: -0.01em; }
+  .low-badge {
+    display:inline-flex; align-items:center; gap:5px;
+    font-size: 11.5px; font-weight: 700; color: var(--warn);
+    background: rgba(221,132,41,0.14); padding: 4px 9px; border-radius: 999px;
+  }
+  .pack-grid {
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    gap: 9px; justify-items: center; margin: 6px 0 18px;
+  }
+  .pill {
+    width: 24px; height: 38px; border-radius: 14px;
+    background: var(--capsule-empty);
+    border: 1px solid var(--rule);
+    transition: background 0.5s ease, border-color 0.5s ease, transform 0.4s cubic-bezier(.34,1.56,.64,1);
+  }
+  .pill.filled {
+    background: linear-gradient(160deg, var(--teal-bright), var(--teal));
+    border-color: rgba(30,133,163,0.5);
+  }
+  /* loop animation: cycles pills from filled -> empty one at a time */
+  @keyframes empty-cycle {
+    0%, 6% { background: linear-gradient(160deg, var(--teal-bright), var(--teal)); border-color: rgba(30,133,163,0.5); transform: scale(1); }
+    10%, 100% { background: var(--capsule-empty); border-color: var(--rule); transform: scale(0.9); }
+  }
+  .pill.animated { animation: empty-cycle 9s ease-in-out infinite; }
+  .refill-line {
+    display:flex; align-items:center; gap:7px; font-size: 13px; color: var(--ink-faded);
+    margin-bottom: 16px;
+  }
+  .refill-line .spark { color: var(--blue); }
+  .took-btn {
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    background: var(--teal); color: #fff; font-weight: 700; font-size: 14.5px;
+    padding: 12px; border-radius: 13px;
+    animation: pulse-tap 3s ease-in-out infinite;
+  }
+  @keyframes pulse-tap {
+    0%, 80%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(30,133,163,0); }
+    88% { transform: scale(0.97); box-shadow: 0 0 0 8px rgba(30,133,163,0.12); }
+  }
+
+  /* sections */
+  section { padding: 64px 0; }
+  .section-head { text-align: center; max-width: 640px; margin: 0 auto 46px; }
+  .section-head h2 { font-size: clamp(28px, 4vw, 38px); letter-spacing: -0.02em; margin: 0 0 12px; font-weight: 800; }
+  .section-head p { color: var(--ink-faded); font-size: 17px; margin: 0; }
+
+  .features {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px;
+  }
+  .feature-card {
+    background: var(--surface); border: 1px solid var(--rule); border-radius: 20px;
+    padding: 28px 24px; transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .feature-card:hover { transform: translateY(-4px); box-shadow: 0 16px 32px -16px rgba(20,93,110,0.25); }
+  .feature-icon {
+    width: 46px; height: 46px; border-radius: 13px; background: var(--surface-raised);
+    display: flex; align-items: center; justify-content: center; margin-bottom: 16px;
+    color: var(--teal-deep);
+  }
+  .feature-card h3 { font-size: 17px; margin: 0 0 8px; letter-spacing: -0.01em; }
+  .feature-card p { font-size: 14.5px; color: var(--ink-faded); margin: 0; }
+
+  /* honesty banner */
+  .honesty {
+    background: var(--surface-raised); border: 1px solid var(--rule); border-radius: 22px;
+    padding: 32px 36px; display: flex; gap: 20px; align-items: flex-start;
+  }
+  .honesty .mark {
+    flex-shrink: 0; width: 40px; height: 40px; border-radius: 12px;
+    background: var(--teal); color: #fff; display:flex; align-items:center; justify-content:center;
+    font-weight: 800; font-size: 18px;
+  }
+  .honesty h3 { margin: 0 0 8px; font-size: 17px; }
+  .honesty p { margin: 0; color: var(--ink-faded); font-size: 14.5px; }
+
+  /* screenshots */
+  .shots {
+    display: flex; gap: 22px; overflow-x: auto; padding: 10px 4px 20px;
+    scrollbar-width: none;
+  }
+  .shots::-webkit-scrollbar { display: none; }
+  .shot {
+    flex: 0 0 auto; width: 220px; border-radius: 28px; overflow: hidden;
+    border: 1px solid var(--rule); box-shadow: 0 20px 40px -20px rgba(20,93,110,0.3);
+    background: var(--surface);
+  }
+  .shot img { display: block; width: 100%; height: auto; }
+  .shot-cap { text-align: center; font-size: 13px; color: var(--ink-faded); margin-top: 10px; }
+
+  /* pricing */
+  .pricing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; max-width: 720px; margin: 0 auto; }
+  .price-card {
+    background: var(--surface); border: 1px solid var(--rule); border-radius: 22px; padding: 32px 28px;
+  }
+  .price-card.pro { border-color: var(--teal); box-shadow: 0 20px 40px -20px rgba(20,93,110,0.35); position: relative; }
+  .price-card.pro::before {
+    content: "ONE-TIME"; position: absolute; top: -12px; right: 24px;
+    background: var(--teal); color: #fff; font-size: 11px; font-weight: 800;
+    letter-spacing: 0.04em; padding: 5px 12px; border-radius: 999px;
+  }
+  .price-card h3 { margin: 0 0 4px; font-size: 15px; color: var(--ink-faded); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
+  .price-card .amount { font-size: 40px; font-weight: 800; letter-spacing: -0.02em; margin: 6px 0 18px; }
+  .price-card .amount span { font-size: 16px; font-weight: 600; color: var(--ink-faded); }
+  .price-card ul { margin: 0; padding: 0; list-style: none; }
+  .price-card li { display: flex; gap: 10px; font-size: 14.5px; color: var(--ink-faded); margin-bottom: 10px; align-items: flex-start; }
+  .price-card li .check { color: var(--teal); font-weight: 800; flex-shrink: 0; }
+
+  /* footer cta */
+  .final-cta {
+    text-align: center; padding: 80px 0 60px;
+  }
+  .final-cta h2 { font-size: clamp(28px, 4vw, 40px); letter-spacing: -0.02em; margin: 0 0 16px; font-weight: 800; }
+  .final-cta p { color: var(--ink-faded); font-size: 17px; margin: 0 0 30px; }
+
+  footer.site {
+    border-top: 1px solid var(--rule); padding: 30px 0 40px;
+  }
+  footer.site .container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; }
+  footer.site p { margin: 0; font-size: 13.5px; color: var(--ink-faded); }
+  footer.site nav a { margin-left: 18px; font-size: 13.5px; }
+
+  @media (max-width: 860px) {
+    .hero { grid-template-columns: 1fr; padding-top: 46px; }
+    .pack-stage { order: -1; }
+    .features { grid-template-columns: 1fr; }
+    .pricing-grid { grid-template-columns: 1fr; }
+    nav a { margin-left: 14px; font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="site-inner">
+    <a class="brand" href="index.html"><span class="dot"></span>Refill</a>
+    <nav>
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+      <a href="support.html">Support</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="container hero">
+    <div>
+      <span class="eyebrow">💊 Pill supply, honestly tracked</span>
+      <h1>Never get caught <em>without a refill</em> again.</h1>
+      <p class="sub">Refill is a simple supply counter for iPhone. Tap &ldquo;Took it&rdquo; each day, watch your blister pack empty pill by pill, and get an adaptive estimate of when you'll run out &mdash; based on how you actually take it, not a fixed schedule.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#pricing">Get Refill — Free</a>
+        <a class="btn btn-ghost" href="support.html">See how it works</a>
+      </div>
+      <p class="microcopy">Free to track 2 medications. No account, no ads, no network access &mdash; ever.</p>
+    </div>
+
+    <div class="pack-stage">
+      <div class="phone-frame">
+        <div class="phone-header">
+          <span class="title">Lisinopril</span>
+          <span class="low-badge">⚠ Low</span>
+        </div>
+        <div class="pack-grid" id="packGrid"></div>
+        <div class="refill-line"><span class="spark">✦</span> Due for refill around Jul 12</div>
+        <div class="took-btn">✓ Took it</div>
+      </div>
+    </div>
+  </div>
+
+  <section id="honesty-band">
+    <div class="container">
+      <div class="honesty">
+        <div class="mark">i</div>
+        <div>
+          <h3>What Refill is &mdash; and isn't</h3>
+          <p>Refill is a manual supply counter and reminder tool. It is <strong>not a medical device</strong>, does not read prescription labels, and performs no automated pill recognition or OCR &mdash; every count is entered by you. Refill-date estimates are convenience projections, not medical guidance. Always follow your prescriber's or pharmacist's instructions.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="features">
+    <div class="container">
+      <div class="section-head">
+        <h2>Built around one honest question</h2>
+        <p>&ldquo;How many days until I run out?&rdquo; Refill answers it better every day you use it.</p>
+      </div>
+      <div class="features">
+        <div class="feature-card">
+          <div class="feature-icon">▦</div>
+          <h3>The blister pack, made real</h3>
+          <p>Your supply is a literal grid of pills. Tap &ldquo;Took it&rdquo; and watch one empty with a satisfying pop &mdash; the same signature interaction, every single day.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">✦</div>
+          <h3>Adaptive refill projection</h3>
+          <p>Refill learns your real pace from your check-in history and blends it with your declared dose &mdash; so missed days or catch-up bursts shift the estimate automatically.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">⚠</div>
+          <h3>Low-supply warnings</h3>
+          <p>Set your own threshold and get a local notification before you run dry &mdash; entirely on-device, no server involved.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">↻</div>
+          <h3>One-tap refill logging</h3>
+          <p>Picked up a new bottle? Log the new count in two taps and Refill keeps full history of every refill you've ever logged.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📷</div>
+          <h3>Optional reference photo</h3>
+          <p>Attach a photo of the bottle or label purely as your own visual reference. No text recognition, no analysis &mdash; just a picture, stored on your device.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔒</div>
+          <h3>100% on-device</h3>
+          <p>No account, no server, no analytics, no ad SDKs. Your medications and history never leave your phone.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="screenshots">
+    <div class="container">
+      <div class="section-head">
+        <h2>See it in your pocket</h2>
+        <p>Clean, clinical, calm &mdash; exactly what a daily health habit should feel like.</p>
+      </div>
+      <div class="shots">
+        <div class="shot"><div style="aspect-ratio: 9/19.5; background: linear-gradient(160deg,#eef5f6,#ffffff); display:flex;align-items:center;justify-content:center;color:#1e85a3;font-weight:700;">Medications list</div></div>
+        <div class="shot"><div style="aspect-ratio: 9/19.5; background: linear-gradient(160deg,#eef5f6,#ffffff); display:flex;align-items:center;justify-content:center;color:#1e85a3;font-weight:700;">Blister pack detail</div></div>
+        <div class="shot"><div style="aspect-ratio: 9/19.5; background: linear-gradient(160deg,#eef5f6,#ffffff); display:flex;align-items:center;justify-content:center;color:#1e85a3;font-weight:700;">Refill history</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="pricing">
+    <div class="container">
+      <div class="section-head">
+        <h2>Free forever. Pro if you want more.</h2>
+        <p>No subscriptions, no trials that quietly renew. One purchase, yours for good.</p>
+      </div>
+      <div class="pricing-grid">
+        <div class="price-card">
+          <h3>Free</h3>
+          <div class="amount">$0</div>
+          <ul>
+            <li><span class="check">✓</span> Track up to 2 medications</li>
+            <li><span class="check">✓</span> Daily check-ins & blister-pack view</li>
+            <li><span class="check">✓</span> Adaptive refill-date projection</li>
+            <li><span class="check">✓</span> Low-supply notifications</li>
+            <li><span class="check">✓</span> Last 3 refill events per medication</li>
+          </ul>
+        </div>
+        <div class="price-card pro">
+          <h3>Refill Pro</h3>
+          <div class="amount">$2.99 <span>once</span></div>
+          <ul>
+            <li><span class="check">✓</span> Unlimited medications</li>
+            <li><span class="check">✓</span> Full refill history, forever</li>
+            <li><span class="check">✓</span> Custom pill-shape & color themes</li>
+            <li><span class="check">✓</span> One-time purchase &mdash; not a subscription</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="final-cta">
+    <div class="container">
+      <h2>Stop guessing when the bottle runs dry.</h2>
+      <p>Download Refill and let the blister pack tell you the truth.</p>
+      <a class="btn btn-primary" href="support.html">Get Refill on the App Store</a>
+    </div>
+  </div>
+</main>
+
+<footer class="site">
+  <div class="container">
+    <p>Developer: Shimon Deitel (Joshua Deitel) &middot; Contact: <a href="mailto:s0533495227@gmail.com">s0533495227@gmail.com</a></p>
+    <nav>
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+      <a href="support.html">Support</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+  // Build the 10-slot blister pack and stagger the empty animation so pills
+  // empty one at a time, looping, mirroring the app's real interaction.
+  const grid = document.getElementById('packGrid');
+  const total = 10;
+  const filled = 6;
+  for (let i = 0; i < total; i++) {
+    const pill = document.createElement('div');
+    pill.className = 'pill' + (i < filled ? ' filled animated' : '');
+    if (i < filled) {
+      pill.style.animationDelay = (i * 0.9) + 's';
+    }
+    grid.appendChild(pill);
+  }
+</script>
+</body>
+</html>
