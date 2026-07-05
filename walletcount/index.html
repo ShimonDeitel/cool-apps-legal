@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wallet Count — See Your Cash Deplete, Don't Just Guess</title>
+<meta name="description" content="Wallet Count turns your cash into a real bill-stack on your screen. Log a spend and watch the stack peel away — no guessing what's left in your wallet.">
+<style>
+  :root{
+    --backdrop:#0e1612;
+    --surface:#161f1b;
+    --surface-raised:#1d2b23;
+    --bill-green:#5aa960;
+    --bill-green-bright:#7ad373;
+    --ink:#f2f6f2;
+    --ink-faded:rgba(242,246,242,0.58);
+    --rule:rgba(255,255,255,0.10);
+    --warn:#dd7745;
+    --c100:#602ea5;
+    --c50:#c85232;
+    --c20:#4a8cc4;
+    --c10:#db982e;
+    --c5:#837e84;
+    --c1:#5aa960;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--backdrop);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Rounded","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  a{color:inherit;}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px;}
+
+  /* ---------- NAV ---------- */
+  header.site{
+    position:sticky;top:0;z-index:50;
+    background:rgba(14,22,18,0.82);
+    backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--rule);
+  }
+  .site-inner{
+    max-width:1080px;margin:0 auto;padding:16px 24px;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .brand{
+    font-weight:800;font-size:17px;letter-spacing:-0.01em;
+    display:flex;align-items:center;gap:8px;text-decoration:none;
+  }
+  .brand .dot{
+    width:10px;height:18px;border-radius:3px;background:var(--bill-green-bright);
+    box-shadow:0 0 12px rgba(122,211,115,0.6);
+  }
+  nav.top a{
+    font-size:14px;color:var(--ink-faded);text-decoration:none;margin-left:22px;
+  }
+  nav.top a:hover{color:var(--bill-green-bright);}
+
+  /* ---------- HERO ---------- */
+  .hero{
+    padding:88px 0 40px;
+    display:grid;grid-template-columns:1.05fr 0.95fr;gap:48px;align-items:center;
+  }
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:8px;
+    font-size:12.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+    color:var(--bill-green-bright);
+    background:rgba(90,169,96,0.12);
+    border:1px solid rgba(122,211,115,0.25);
+    padding:6px 12px;border-radius:99px;margin-bottom:22px;
+  }
+  h1{
+    font-size:clamp(34px,5vw,54px);
+    line-height:1.05;letter-spacing:-0.03em;font-weight:800;margin:0 0 20px;
+  }
+  h1 em{
+    font-style:normal;color:var(--bill-green-bright);
+  }
+  .sub{
+    font-size:19px;color:var(--ink-faded);max-width:480px;margin:0 0 32px;
+  }
+  .cta-row{display:flex;gap:14px;flex-wrap:wrap;align-items:center;}
+  .btn{
+    display:inline-flex;align-items:center;gap:10px;
+    padding:15px 26px;border-radius:99px;font-weight:700;font-size:15.5px;
+    text-decoration:none;transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .btn-primary{
+    background:var(--bill-green);color:#0b130e;
+    box-shadow:0 10px 30px -8px rgba(90,169,96,0.55);
+  }
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 14px 34px -6px rgba(90,169,96,0.65);}
+  .btn-ghost{
+    color:var(--ink);border:1px solid var(--rule);
+  }
+  .btn-ghost:hover{border-color:rgba(255,255,255,0.3);}
+  .price-note{font-size:13px;color:var(--ink-faded);margin-top:14px;}
+
+  /* ---------- BILL STACK HERO VISUAL ---------- */
+  .stage{
+    position:relative;height:520px;display:flex;align-items:flex-end;justify-content:center;
+  }
+  .phone{
+    position:relative;width:270px;height:500px;border-radius:44px;
+    background:linear-gradient(180deg,#141d19,#0e1612);
+    border:2px solid rgba(255,255,255,0.08);
+    box-shadow:0 40px 80px -20px rgba(0,0,0,0.7), inset 0 0 0 1px rgba(255,255,255,0.03);
+    padding:26px 18px 22px;
+    display:flex;flex-direction:column;align-items:center;
+  }
+  .phone .notch{
+    position:absolute;top:10px;left:50%;transform:translateX(-50%);
+    width:84px;height:22px;border-radius:14px;background:#000;
+  }
+  .readout{text-align:center;margin-top:26px;}
+  .readout .label{
+    font-size:10px;font-weight:700;letter-spacing:0.14em;color:var(--ink-faded);text-transform:uppercase;
+  }
+  .readout .amount{
+    font-size:40px;font-weight:800;color:var(--bill-green-bright);
+    font-variant-numeric:tabular-nums;letter-spacing:-0.02em;
+    margin-top:4px;
+    transition:opacity .25s ease;
+  }
+  .stack-zone{
+    position:relative;width:100%;flex:1;margin-top:22px;
+    display:flex;align-items:flex-end;justify-content:center;
+  }
+  .bill{
+    position:absolute;width:190px;height:40px;border-radius:8px;
+    display:flex;align-items:center;justify-content:flex-end;padding-right:14px;
+    font-weight:800;font-size:12px;color:rgba(255,255,255,0.92);
+    border:1px solid rgba(0,0,0,0.25);
+    box-shadow:0 3px 6px rgba(0,0,0,0.35);
+    transition:transform .55s cubic-bezier(.22,1,.36,1), opacity .5s ease;
+  }
+  .bill.b1{background:var(--c1);}
+  .bill.b5{background:var(--c5);}
+  .bill.b10{background:var(--c10);}
+  .bill.b20{background:var(--c20);}
+  .tap-hint{
+    margin-top:14px;font-size:11.5px;color:var(--ink-faded);
+    display:flex;align-items:center;gap:6px;
+  }
+  .tap-hint .pulse{
+    width:6px;height:6px;border-radius:50%;background:var(--bill-green-bright);
+    animation:pulse 1.6s infinite;
+  }
+  @keyframes pulse{
+    0%,100%{opacity:.3;transform:scale(1);}
+    50%{opacity:1;transform:scale(1.4);}
+  }
+  .log-btn{
+    margin-top:16px;background:var(--bill-green);color:#0b130e;
+    font-weight:700;font-size:12.5px;border:none;border-radius:99px;
+    padding:10px 20px;box-shadow:0 8px 18px -6px rgba(90,169,96,.6);
+  }
+
+  /* floating decorative bills drifting in background */
+  .float-bill{
+    position:absolute;border-radius:6px;opacity:0.15;filter:blur(0.3px);
+    animation:drift 14s ease-in-out infinite;
+  }
+  @keyframes drift{
+    0%,100%{transform:translateY(0) rotate(-6deg);}
+    50%{transform:translateY(-26px) rotate(4deg);}
+  }
+
+  /* ---------- SECTION SHARED ---------- */
+  section{padding:88px 0;}
+  .section-head{max-width:640px;margin:0 0 48px;}
+  .kicker{
+    font-size:12.5px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+    color:var(--bill-green-bright);margin-bottom:12px;
+  }
+  h2{font-size:clamp(26px,3.6vw,38px);letter-spacing:-0.02em;margin:0 0 14px;font-weight:800;}
+  .section-head p{font-size:17px;color:var(--ink-faded);margin:0;}
+
+  /* ---------- FEATURES ---------- */
+  .features{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+  .feature{
+    background:var(--surface);border:1px solid var(--rule);border-radius:20px;
+    padding:28px 24px;transition:transform .2s ease, border-color .2s ease;
+  }
+  .feature:hover{transform:translateY(-4px);border-color:rgba(122,211,115,0.35);}
+  .feature .icon{
+    width:44px;height:44px;border-radius:12px;background:rgba(90,169,96,0.15);
+    display:flex;align-items:center;justify-content:center;margin-bottom:18px;
+    color:var(--bill-green-bright);
+  }
+  .feature h3{font-size:17px;margin:0 0 8px;font-weight:700;}
+  .feature p{font-size:14.5px;color:var(--ink-faded);margin:0;}
+
+  /* ---------- SCREENSHOTS ---------- */
+  .shots{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:18px;
+  }
+  .shot{
+    background:var(--surface);border:1px solid var(--rule);border-radius:22px;
+    aspect-ratio:9/19.5;overflow:hidden;position:relative;
+  }
+  .shot .frame{
+    position:absolute;inset:0;padding:8% 7%;display:flex;flex-direction:column;
+  }
+  .shot .sh-label{
+    position:absolute;bottom:14px;left:0;right:0;text-align:center;
+    font-size:11px;color:var(--ink-faded);font-weight:600;
+  }
+  .mock-topbar{font-size:9px;color:var(--ink-faded);display:flex;justify-content:space-between;margin-bottom:14%;}
+  .mock-title{font-size:13px;font-weight:800;text-align:center;}
+  .mock-sub{font-size:8px;color:var(--ink-faded);text-align:center;margin-top:2px;}
+  .mock-amount{font-size:26px;font-weight:800;color:var(--bill-green-bright);text-align:center;margin-top:10%;}
+  .mock-bills{flex:1;position:relative;margin-top:8%;}
+  .mock-bill{
+    position:absolute;left:50%;height:16%;border-radius:5px;
+    transform:translateX(-50%);
+  }
+
+  /* ---------- PRICING ---------- */
+  .pricing-card{
+    background:linear-gradient(160deg,var(--surface-raised),var(--surface));
+    border:1px solid var(--rule);border-radius:28px;
+    padding:48px;display:grid;grid-template-columns:1fr auto;gap:40px;align-items:center;
+  }
+  .pricing-card h3{font-size:24px;margin:0 0 10px;font-weight:800;}
+  .pricing-card p{color:var(--ink-faded);margin:0 0 18px;font-size:15px;max-width:440px;}
+  .pricing-list{list-style:none;padding:0;margin:0 0 22px;display:flex;flex-direction:column;gap:8px;}
+  .pricing-list li{font-size:14.5px;display:flex;align-items:center;gap:10px;color:var(--ink);}
+  .pricing-list li::before{content:"";width:16px;height:16px;flex:none;border-radius:50%;background:rgba(122,211,115,0.18);
+    box-shadow:inset 0 0 0 1px rgba(122,211,115,0.4);}
+  .price-box{
+    text-align:center;background:var(--backdrop);border:1px solid var(--rule);
+    border-radius:20px;padding:32px 40px;min-width:220px;
+  }
+  .price-box .amt{font-size:44px;font-weight:800;color:var(--bill-green-bright);}
+  .price-box .per{font-size:13px;color:var(--ink-faded);margin-top:2px;}
+  .price-box .tag{
+    font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+    color:var(--ink-faded);margin-top:14px;
+  }
+
+  /* ---------- FOOTER ---------- */
+  footer.site{border-top:1px solid var(--rule);padding:40px 0;margin-top:20px;}
+  .footer-inner{
+    display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;
+    font-size:13.5px;color:var(--ink-faded);
+  }
+  .footer-links a{margin-left:20px;text-decoration:none;color:var(--ink-faded);}
+  .footer-links a:hover{color:var(--bill-green-bright);}
+
+  @media (max-width:860px){
+    .hero{grid-template-columns:1fr;padding-top:64px;}
+    .stage{height:420px;order:-1;}
+    .phone{width:230px;height:420px;}
+    .features{grid-template-columns:1fr;}
+    .shots{grid-template-columns:repeat(2,1fr);}
+    .pricing-card{grid-template-columns:1fr;text-align:center;}
+    .pricing-list{align-items:center;}
+    .pricing-list li{justify-content:center;}
+  }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="site-inner">
+    <a class="brand" href="../index.html"><span class="dot"></span>Wallet Count</a>
+    <nav class="top">
+      <a href="#features">Features</a>
+      <a href="#screens">Screens</a>
+      <a href="#pricing">Pricing</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap hero">
+    <div>
+      <span class="eyebrow">Cash tracker · no bank sync · no login</span>
+      <h1>See your cash <em>deplete</em>.<br>Don't just guess.</h1>
+      <p class="sub">Wallet Count turns the bills in your pocket into a real, tappable stack on your screen. Log a spend, watch the stack peel away in real time — so you always know exactly what's left before you open your wallet.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#pricing">Get Wallet Count</a>
+        <a class="btn btn-ghost" href="#features">See how it works</a>
+      </div>
+      <p class="price-note">Free to start · Pro unlock is a one-time $2.99, not a subscription.</p>
+    </div>
+
+    <div class="stage" id="stage">
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="readout">
+          <div class="label">Should Have</div>
+          <div class="amount" id="amount">US$164</div>
+        </div>
+        <div class="stack-zone" id="stackZone">
+          <!-- bills injected by JS -->
+        </div>
+        <div class="tap-hint"><span class="pulse"></span> tap to log a spend</div>
+        <button class="log-btn" id="logBtn">− Log a Spend</button>
+      </div>
+    </div>
+  </div>
+
+  <section id="features">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="kicker">Why it's different</div>
+        <h2>Built around one honest question: what's actually left?</h2>
+        <p>No bank linking, no budgeting categories to fight with. Just the cash you started with, minus what you've spent — rendered as bills you can watch disappear.</p>
+      </div>
+      <div class="features">
+        <div class="feature">
+          <div class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="4" rx="1.5" fill="currentColor"/><rect x="3" y="11" width="18" height="4" rx="1.5" fill="currentColor" opacity="0.7"/><rect x="3" y="16" width="12" height="4" rx="1.5" fill="currentColor" opacity="0.4"/></svg>
+          </div>
+          <h3>Visual bill-stack</h3>
+          <p>Start a period with your real denominations — $1s, $5s, $20s, $100s. Wallet Count renders them as a physical stack, color-coded exactly like the paper in your hand.</p>
+        </div>
+        <div class="feature">
+          <div class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 12h16M14 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3>Bills peel away, not a ticker</h3>
+          <p>Log a spend and the top of the stack physically slides off and fades — a satisfying, tactile depletion animation instead of a boring number ticking down.</p>
+        </div>
+        <div class="feature">
+          <div class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/></svg>
+          </div>
+          <h3>Reconcile against real bills</h3>
+          <p>Count the physical cash left in your wallet and compare it to what the app expects. Instantly see if you're short, and by how much.</p>
+        </div>
+        <div class="feature">
+          <div class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h10M4 18h7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <h3>Full spend history</h3>
+          <p>Every logged spend and reconciliation lives in a clean history view, so a night out or a week of cash use is easy to look back on.</p>
+        </div>
+        <div class="feature">
+          <div class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="7" height="7" rx="1.5" fill="currentColor"/><rect x="13" y="4" width="7" height="7" rx="1.5" fill="currentColor" opacity="0.5"/><rect x="4" y="13" width="7" height="7" rx="1.5" fill="currentColor" opacity="0.5"/><rect x="13" y="13" width="7" height="7" rx="1.5" fill="currentColor" opacity="0.8"/></svg>
+          </div>
+          <h3>Multiple wallets (Pro)</h3>
+          <p>Track a personal cash wallet and a separate tip jar or business float side by side, each with its own color theme.</p>
+        </div>
+        <div class="feature">
+          <div class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4.5L6 21l1.5-7.5L2 9h7z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          </div>
+          <h3>100% private, on-device</h3>
+          <p>No bank login, no network access at all. Every wallet, spend, and reconciliation lives only on your phone.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="screens">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="kicker">Take a look</div>
+        <h2>The whole app, at a glance.</h2>
+        <p>Same forest-green, cash-register identity from the first bill you add to the last reconciliation.</p>
+      </div>
+      <div class="shots">
+        <div class="shot">
+          <div class="frame">
+            <div class="mock-topbar"><span>9:41</span><span>●●●●</span></div>
+            <div class="mock-title">Starting Cash</div>
+            <div class="mock-sub">Tap a bill to add it</div>
+            <div class="mock-amount">US$0</div>
+          </div>
+          <div class="sh-label">Start a period</div>
+        </div>
+        <div class="shot">
+          <div class="frame">
+            <div class="mock-topbar"><span>9:41</span><span>●●●●</span></div>
+            <div class="mock-title">Cash</div>
+            <div class="mock-sub">Period started Jul 5</div>
+            <div class="mock-amount">US$164</div>
+            <div class="mock-bills">
+              <div class="mock-bill" style="background:var(--c20);bottom:0;width:78%;"></div>
+              <div class="mock-bill" style="background:var(--c20);bottom:18%;width:76%;"></div>
+              <div class="mock-bill" style="background:var(--c10);bottom:36%;width:74%;"></div>
+              <div class="mock-bill" style="background:var(--c10);bottom:54%;width:72%;"></div>
+              <div class="mock-bill" style="background:var(--c5);bottom:72%;width:70%;"></div>
+            </div>
+          </div>
+          <div class="sh-label">Your live bill-stack</div>
+        </div>
+        <div class="shot">
+          <div class="frame">
+            <div class="mock-topbar"><span>9:41</span><span>●●●●</span></div>
+            <div class="mock-title">Reconcile</div>
+            <div class="mock-sub">Count what's actually in your wallet</div>
+            <div class="mock-amount" style="color:var(--warn);font-size:22px;margin-top:22%;">−US$6 short</div>
+          </div>
+          <div class="sh-label">Reconcile physical cash</div>
+        </div>
+        <div class="shot">
+          <div class="frame">
+            <div class="mock-topbar"><span>9:41</span><span>●●●●</span></div>
+            <div class="mock-title">History</div>
+            <div class="mock-sub">Every spend, in order</div>
+            <div style="margin-top:20%;display:flex;flex-direction:column;gap:8px;">
+              <div style="display:flex;justify-content:space-between;font-size:9px;"><span>Coffee</span><span style="color:var(--bill-green-bright);font-weight:700;">−$5</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:9px;"><span>Parking</span><span style="color:var(--bill-green-bright);font-weight:700;">−$12</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:9px;"><span>Lunch</span><span style="color:var(--bill-green-bright);font-weight:700;">−$18</span></div>
+            </div>
+          </div>
+          <div class="sh-label">Full spend history</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="pricing">
+    <div class="wrap">
+      <div class="pricing-card">
+        <div>
+          <h3>Free to track. $2.99 once to unlock everything.</h3>
+          <p>Wallet Count Pro is a single, one-time purchase — not a subscription. Pay once, own it forever, restore it free on any device.</p>
+          <ul class="pricing-list">
+            <li>Unlimited period history (free tier keeps your most recent period)</li>
+            <li>Multiple simultaneous wallets</li>
+            <li>Custom bill-stack color themes</li>
+          </ul>
+          <a class="btn btn-primary" href="https://apps.apple.com/">Download on the App Store</a>
+        </div>
+        <div class="price-box">
+          <div class="amt">$2.99</div>
+          <div class="per">one time</div>
+          <div class="tag">Not a subscription</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site">
+  <div class="wrap footer-inner">
+    <span>&copy; 2026 Shimon Deitel. Wallet Count.</span>
+    <span class="footer-links">
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="terms.html">Terms of Use</a>
+      <a href="mailto:s0533495227@gmail.com">Contact</a>
+    </span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var denominations = [
+    {v:20, cls:'b20', w:190},
+    {v:20, cls:'b20', w:186},
+    {v:10, cls:'b10', w:182},
+    {v:10, cls:'b10', w:178},
+    {v:5,  cls:'b5',  w:174},
+    {v:1,  cls:'b1',  w:170},
+    {v:1,  cls:'b1',  w:166}
+  ];
+  var total = 164; // 20+20+10+10+5+1+1... adjusted for display below
+  var zone = document.getElementById('stackZone');
+  var amountEl = document.getElementById('amount');
+  var btn = document.getElementById('logBtn');
+  var bills = [];
+  var runningTotal = 0;
+
+  denominations.forEach(function(d, i){
+    var el = document.createElement('div');
+    el.className = 'bill ' + d.cls;
+    el.style.width = d.w + 'px';
+    el.style.bottom = (i * 14) + 'px';
+    el.style.left = '50%';
+    el.style.transform = 'translateX(-50%) rotate(' + (i % 2 === 0 ? -0.6 : 0.6) + 'deg)';
+    el.style.zIndex = i;
+    el.textContent = '$' + d.v;
+    zone.appendChild(el);
+    bills.push({el: el, value: d.v});
+    runningTotal += d.v;
+  });
+  amountEl.textContent = 'US$' + runningTotal;
+
+  var spendAmounts = [12, 9, 21, 6, 15, 8];
+  var spendIndex = 0;
+
+  function removeTopBill(){
+    if (bills.length === 0){
+      // refill after a pause for the loop
+      setTimeout(rebuild, 1400);
+      return;
+    }
+    var last = bills.pop();
+    last.el.style.transform = 'translateX(120px) rotate(10deg)';
+    last.el.style.opacity = '0';
+    runningTotal -= last.value;
+    if (runningTotal < 0) runningTotal = 0;
+    amountEl.style.opacity = '0.4';
+    setTimeout(function(){
+      amountEl.textContent = 'US$' + runningTotal;
+      amountEl.style.opacity = '1';
+    }, 180);
+    setTimeout(function(){
+      if (last.el.parentNode) last.el.parentNode.removeChild(last.el);
+    }, 600);
+  }
+
+  function rebuild(){
+    zone.innerHTML = '';
+    bills = [];
+    runningTotal = 0;
+    denominations.forEach(function(d, i){
+      var el = document.createElement('div');
+      el.className = 'bill ' + d.cls;
+      el.style.width = d.w + 'px';
+      el.style.bottom = (i * 14) + 'px';
+      el.style.left = '50%';
+      el.style.transform = 'translateX(-50%) rotate(' + (i % 2 === 0 ? -0.6 : 0.6) + 'deg)';
+      el.style.zIndex = i;
+      el.textContent = '$' + d.v;
+      zone.appendChild(el);
+      bills.push({el: el, value: d.v});
+      runningTotal += d.v;
+    });
+    amountEl.textContent = 'US$' + runningTotal;
+  }
+
+  btn.addEventListener('click', removeTopBill);
+
+  // gentle auto-loop so visitors see the animation without clicking
+  var auto = setInterval(function(){
+    removeTopBill();
+  }, 2200);
+
+  // pause auto-loop briefly if the user interacts manually
+  btn.addEventListener('click', function(){
+    clearInterval(auto);
+    auto = setInterval(removeTopBill, 2200);
+  });
+})();
+</script>
+
+</body>
+</html>
