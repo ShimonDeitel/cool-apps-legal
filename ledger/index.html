@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ledger — Safe to Spend This Week</title>
+<meta name="description" content="Ledger tells you one number: what's safe to spend this week. No categories to fight, no budgets to fake. Just log it and know.">
+<style>
+  :root{
+    --paper:#F8F3E8;
+    --paper-deep:#F2EBDD;
+    --ink:#1D283C;
+    --ink-faded:rgba(29,40,60,.55);
+    --accent:#C98B2E;
+    --rule:rgba(29,40,60,.12);
+    --danger:#B3493C;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.5;
+  }
+  .serif{ font-family:Georgia,"Iowan Old Style","Palatino Linotype",Palatino,serif; }
+
+  a{ color:var(--accent); }
+
+  header.site{
+    border-bottom:1px solid var(--rule);
+    position:sticky; top:0; background:rgba(248,243,232,.88);
+    backdrop-filter:saturate(180%) blur(10px);
+    z-index:10;
+  }
+  .site-inner{
+    max-width:960px; margin:0 auto; padding:18px 24px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .brand{ font-weight:700; font-size:17px; color:var(--ink); text-decoration:none; letter-spacing:-0.01em; }
+  header nav a{ color:var(--ink-faded); text-decoration:none; font-size:14px; margin-left:22px; }
+  header nav a:hover{ color:var(--ink); }
+
+  .wrap{ max-width:960px; margin:0 auto; padding:0 24px; }
+
+  /* HERO */
+  .hero{
+    padding:88px 0 64px;
+    display:grid;
+    grid-template-columns:1.1fr 0.9fr;
+    gap:48px;
+    align-items:center;
+  }
+  .hero h1{
+    font-size:44px; line-height:1.1; letter-spacing:-0.02em; margin:0 0 18px; font-weight:600;
+  }
+  .hero p.tagline{
+    font-size:19px; color:var(--ink-faded); max-width:46ch; margin:0 0 30px;
+  }
+  .cta-row{ display:flex; gap:14px; flex-wrap:wrap; align-items:center; }
+  .btn{
+    display:inline-block; padding:13px 24px; border-radius:12px;
+    background:var(--ink); color:var(--paper); text-decoration:none;
+    font-size:15px; font-weight:600; letter-spacing:.01em;
+  }
+  .btn.secondary{
+    background:transparent; color:var(--ink); border:1px solid var(--rule);
+  }
+  .pro-note{ font-size:13px; color:var(--ink-faded); margin-top:10px; }
+
+  /* PHONE MOCK */
+  .phone{
+    width:100%; max-width:300px; margin:0 auto;
+    background:var(--paper-deep);
+    border:1px solid var(--rule);
+    border-radius:38px;
+    padding:22px 20px 26px;
+    box-shadow:0 30px 60px -20px rgba(29,40,60,.28);
+  }
+  .phone .cap{
+    text-transform:uppercase; letter-spacing:.14em; font-size:11px;
+    color:var(--ink-faded); text-align:center; margin-bottom:10px; font-weight:600;
+  }
+  .stw-number{
+    font-family:Georgia,"Iowan Old Style",serif;
+    font-weight:600;
+    font-size:52px;
+    text-align:center;
+    color:var(--accent);
+    letter-spacing:-0.01em;
+    font-variant-numeric:tabular-nums;
+  }
+  .stw-sub{
+    text-align:center; font-size:13px; color:var(--ink-faded); margin-top:6px; margin-bottom:22px;
+  }
+  .bars{
+    display:flex; align-items:flex-end; gap:8px; height:74px; margin:0 0 18px;
+  }
+  .bars .bar{
+    flex:1; background:var(--accent); opacity:.28; border-radius:4px 4px 0 0;
+  }
+  .bars .bar.today{ opacity:1; }
+  .row-line{
+    display:flex; justify-content:space-between; font-size:13px;
+    padding:9px 0; border-top:1px solid var(--rule); color:var(--ink-faded);
+  }
+  .row-line b{ color:var(--ink); font-weight:600; }
+
+  /* FEATURES */
+  .features{ padding:64px 0; border-top:1px solid var(--rule); }
+  .features h2, .screens h2, .pricing h2{
+    font-size:13px; text-transform:uppercase; letter-spacing:.14em; color:var(--accent);
+    font-weight:700; margin:0 0 26px;
+  }
+  .feature-grid{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:28px;
+  }
+  .feature{
+    background:var(--paper-deep); border:1px solid var(--rule); border-radius:16px; padding:24px;
+    opacity:0; transform:translateY(18px);
+    animation:rise .6s ease forwards;
+  }
+  .feature:nth-child(1){ animation-delay:.05s; }
+  .feature:nth-child(2){ animation-delay:.15s; }
+  .feature:nth-child(3){ animation-delay:.25s; }
+  .feature:nth-child(4){ animation-delay:.35s; }
+  .feature:nth-child(5){ animation-delay:.45s; }
+  .feature:nth-child(6){ animation-delay:.55s; }
+  @keyframes rise{ to{ opacity:1; transform:translateY(0); } }
+  .feature h3{ font-size:17px; margin:0 0 8px; font-weight:600; }
+  .feature p{ font-size:14.5px; color:var(--ink-faded); margin:0; }
+
+  /* PRICING */
+  .pricing{ padding:64px 0; border-top:1px solid var(--rule); }
+  .price-cards{ display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+  .price-card{
+    border:1px solid var(--rule); border-radius:18px; padding:30px;
+    background:var(--paper-deep);
+  }
+  .price-card.pro{ border-color:var(--accent); position:relative; }
+  .price-card.pro::before{
+    content:"PRO"; position:absolute; top:-11px; right:24px;
+    background:var(--accent); color:var(--paper); font-size:11px; font-weight:700;
+    letter-spacing:.1em; padding:4px 10px; border-radius:999px;
+  }
+  .price-card h3{ margin:0 0 4px; font-size:19px; }
+  .price-card .amt{ font-family:Georgia,serif; font-size:36px; font-weight:600; margin:14px 0; }
+  .price-card .amt span{ font-size:15px; font-weight:400; color:var(--ink-faded); font-family:-apple-system,sans-serif; }
+  .price-card ul{ margin:16px 0 0; padding-left:20px; font-size:14.5px; color:var(--ink-faded); }
+  .price-card li{ margin:6px 0; }
+
+  footer.site{
+    border-top:1px solid var(--rule); padding:36px 0 60px; color:var(--ink-faded); font-size:14px;
+  }
+  footer .links a{ margin-right:18px; color:var(--ink-faded); text-decoration:none; }
+  footer .links a:hover{ color:var(--ink); text-decoration:underline; }
+
+  @media (max-width:820px){
+    .hero{ grid-template-columns:1fr; padding-top:56px; }
+    .hero h1{ font-size:34px; }
+    .feature-grid{ grid-template-columns:1fr 1fr; }
+    .price-cards{ grid-template-columns:1fr; }
+  }
+  @media (max-width:520px){
+    .feature-grid{ grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+<header class="site">
+  <div class="site-inner">
+    <a class="brand" href="../index.html">Ledger</a>
+    <nav>
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+      <a href="support.html">Support</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap hero">
+    <div>
+      <h1 class="serif">One number.<br>What's safe to spend this week.</h1>
+      <p class="tagline">Ledger isn't a spreadsheet. Log a purchase in two taps and watch your <em>Safe to Spend</em> number tick down &mdash; instantly, honestly, no categories to fight.</p>
+      <div class="cta-row">
+        <a class="btn" href="#pricing">Get Ledger</a>
+        <a class="btn secondary" href="#how">See how it works</a>
+      </div>
+      <p class="pro-note">Free to use. Ledger Pro is $4.99/month, cancel anytime.</p>
+    </div>
+
+    <div class="phone" id="how">
+      <div class="cap">Safe to spend this week</div>
+      <div class="stw-number" id="stw">$0</div>
+      <div class="stw-sub" id="stw-sub">calculating&hellip;</div>
+      <div class="bars">
+        <div class="bar" style="height:38%"></div>
+        <div class="bar" style="height:62%"></div>
+        <div class="bar" style="height:44%"></div>
+        <div class="bar" style="height:71%"></div>
+        <div class="bar" style="height:30%"></div>
+        <div class="bar today" style="height:55%"></div>
+        <div class="bar" style="height:12%; opacity:.15"></div>
+      </div>
+      <div class="row-line"><span>Spent</span><b>$212</b></div>
+      <div class="row-line"><span>Weekly Budget</span><b>$350</b></div>
+    </div>
+  </div>
+
+  <div class="wrap features">
+    <h2>What's inside</h2>
+    <div class="feature-grid">
+      <div class="feature">
+        <h3>Safe to Spend</h3>
+        <p>One honest number, recalculated the moment you log a purchase &mdash; not a monthly average, not a guess.</p>
+      </div>
+      <div class="feature">
+        <h3>Two-tap logging</h3>
+        <p>Amount, category, optional note. That's the whole form. No receipts to photograph, no accounts to link.</p>
+      </div>
+      <div class="feature">
+        <h3>Weekly pattern</h3>
+        <p>A seven-day bar chart so you can see exactly which day derailed you &mdash; tap a day to see what you bought.</p>
+      </div>
+      <div class="feature">
+        <h3>Daily pace</h3>
+        <p>Ledger divides what's left by the days remaining, so "safe to spend" always means safe to spend <em>today</em>.</p>
+      </div>
+      <div class="feature">
+        <h3>Fully private</h3>
+        <p>No network access, no analytics, no ads. Every entry lives on your device. Nothing is ever uploaded.</p>
+      </div>
+      <div class="feature">
+        <h3>The Ledger Book</h3>
+        <p>Set your weekly budget, manage your membership, and export or clear your data &mdash; all from one settings screen.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap pricing" id="pricing">
+    <h2>Pricing</h2>
+    <div class="price-cards">
+      <div class="price-card">
+        <h3>Ledger</h3>
+        <div class="amt">Free</div>
+        <p style="color:var(--ink-faded); font-size:14.5px; margin:0;">The full weekly Safe-to-Spend experience, at no cost.</p>
+        <ul>
+          <li>Unlimited purchase logging</li>
+          <li>Safe-to-Spend, updated live</li>
+          <li>Weekly pattern chart</li>
+          <li>One budget envelope</li>
+        </ul>
+      </div>
+      <div class="price-card pro">
+        <h3 class="serif">Ledger Pro</h3>
+        <div class="amt">$4.99<span>/month</span></div>
+        <p style="color:var(--ink-faded); font-size:14.5px; margin:0;">For the fully-kept ledger.</p>
+        <ul>
+          <li>Multiple budget envelopes instead of one total</li>
+          <li>Monthly pattern view, not just weekly</li>
+          <li>Export your ledger to CSV</li>
+          <li>Custom accent-color themes</li>
+        </ul>
+      </div>
+    </div>
+    <p class="pro-note" style="margin-top:22px;">Ledger Pro is an auto-renewing monthly subscription billed through your Apple ID. Cancel anytime in Settings &rarr; Apple ID &rarr; Subscriptions. See our <a href="terms.html">Terms of Use</a> for full billing details.</p>
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <p class="links">
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="terms.html">Terms of Use</a>
+      <a href="support.html">Support</a>
+      <a href="mailto:s0533495227@gmail.com">Contact</a>
+    </p>
+    <p>&copy; 2026 Shimon Deitel. Ledger is not a bank or financial institution and does not provide financial advice.</p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var target = 138; // "Safe to Spend" mock target = 350 - 212
+  var el = document.getElementById('stw');
+  var sub = document.getElementById('stw-sub');
+  var start = null;
+  var duration = 1400;
+  function step(ts){
+    if(!start) start = ts;
+    var p = Math.min(1, (ts - start) / duration);
+    var eased = 1 - Math.pow(1 - p, 3);
+    var val = Math.round(target * eased);
+    el.textContent = '$' + val;
+    if(p < 1){ requestAnimationFrame(step); }
+    else {
+      sub.textContent = 'about $20/day if you pace it out';
+    }
+  }
+  requestAnimationFrame(step);
+
+  // Re-trigger feature fade-ins on scroll into view
+  var items = document.querySelectorAll('.feature');
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){
+        e.target.style.animationPlayState = 'running';
+      }
+    });
+  }, { threshold: 0.15 });
+  items.forEach(function(i){ io.observe(i); });
+})();
+</script>
+</body>
+</html>
